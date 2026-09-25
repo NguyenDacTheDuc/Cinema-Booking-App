@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  customer
+}
+
+enum EntityStatus {
+  active
+  inactive
+}
+
+enum MovieStatus {
+  coming_soon
+  now_showing
+}
+
+enum ShowtimeStatus {
+  scheduled
+  ended
+}
+
+enum TicketStatus {
+  available
+  locked
+  booked
+}
+
+enum BookingStatus {
+  pending
+  confirmed
+}
+
+model SeatType {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique @db.VarChar(50) // "standard" | "vip" - tránh trùng loại ghế
+  price Decimal @db.Decimal(10, 2)
+
+  seats Seat[]
+}
+
+model Seat {
+  id           Int @id @default(autoincrement())
+  seatTypeId   Int
+  roomId       Int
+  rowLabel     String @db.VarChar(5) // A, B, C...
+  columnNumber Int
+
+  seatType SeatType @relation(fields: [seatTypeId], references: [id], onDelete: Restrict)
+  room     Room     @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  tickets  Ticket[]
+
+  @@unique([roomId, rowLabel, columnNumber])
+}
+
+model Room {
+  id       Int          @id @default(autoincrement())
+  cinemaId Int
+  name     String       @db.VarChar(100)
+  status   EntityStatus @default(active)
+
+  cinema    Cinema     @relation(fields: [cinemaId], references: [id], onDelete: Restrict)
+  seats     Seat[]
+  showtimes Showtime[]
+
+  @@unique([cinemaId, name]) // 2 phòng trong cùng rạp không được trùng tên
+}
+
+model Cinema {
+  id      Int          @id @default(autoincrement())
+  name    String       @db.VarChar(150)
+  address String       @db.VarChar(255)
+  status  EntityStatus @default(active)
+
+  rooms Room[]
+}
+
+model Movie {
+  id          Int         @id @default(autoincrement())
+  title       String      @db.VarChar(200)
+  description String?     @db.Text
+  duration    Int // minutes
+  language    String?     @db.VarChar(50)
+  director    String?     @db.VarChar(150)
+  castList    String?     @db.VarChar(500)
+  ageRating   String?     @db.VarChar(10)
+  posterUrl   String?     @db.VarChar(500)
+  trailerUrl  String?     @db.VarChar(500)
+  releaseDate DateTime?   @db.Date
+  endDate     DateTime?   @db.Date
+  status      MovieStatus @default(coming_soon)
+
+  genres    MovieGenre[]
+  showtimes Showtime[]
+
+  @@index([status])   // lọc nhanh phim đang chiếu / sắp chiếu
+  @@index([title])    // hỗ trợ tìm kiếm theo tên phim
+}
+
+model Genre {
+  id     Int          @id @default(autoincrement())
+  name   String       @unique @db.VarChar(100) // tránh trùng thể loại
+  status EntityStatus @default(active)
+
+  movies MovieGenre[]
+}
+
+model MovieGenre {
+  movieId Int
+  genreId Int
+
+  movie Movie @relation(fields: [movieId], references: [id])
+  genre Genre @relation(fields: [genreId], references: [id])
+
+  @@id([movieId, genreId])
+}
+
+model Showtime {
+  id        Int            @id @default(autoincrement())
+  movieId   Int
+  roomId    Int
+  showDate  DateTime       @db.Date
+  startTime DateTime       @db.Time()
+  endTime   DateTime       @db.Time()
+  status    ShowtimeStatus @default(scheduled)
+
+  movie    Movie     @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  room     Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  tickets  Ticket[]
+  bookings Booking[]
+
+  @@index([movieId, showDate]) // tăng tốc truy vấn "suất chiếu theo phim + ngày"
+}
+
+model Ticket {
+  id               Int          @id @default(autoincrement())
+  showtimeId       Int
+  seatId           Int
+  bookingId        Int?         // nullable - chỉ có giá trị sau khi confirm
+  lockedByUserId   Int?         // nullable - ai đang giữ ghế lúc locked
+  status           TicketStatus @default(available)
+  lockedUntil      DateTime?
+  priceAtBooking   Decimal?     @db.Decimal(10, 2)
+
+  showtime     Showtime @relation(fields: [showtimeId], references: [id], onDelete: Restrict)
+  seat         Seat     @relation(fields: [seatId], references: [id], onDelete: Restrict)
+  booking      Booking? @relation(fields: [bookingId], references: [id])
+  lockedByUser User?    @relation("SeatLockedBy", fields: [lockedByUserId], references: [id])
+
+  @@unique([showtimeId, seatId])
+}
+
+model Booking {
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  showtimeId  Int
+  createdAt   DateTime      @default(now())
+  totalAmount Decimal       @db.Decimal(10, 2)
+  status      BookingStatus @default(pending)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  showtime Showtime @relation(fields: [showtimeId], references: [id], onDelete: Restrict)
+  tickets  Ticket[]
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  avatar       String?    @db.VarChar(500) // nullable - chỉ thêm sau khi chỉnh sửa profile
+  gender       String     @db.VarChar(10)
+  phone        String     @db.VarChar(20)
+  dateOfBirth  DateTime   @db.Date
+  email        String     @unique @db.VarChar(150)
+  passwordHash String     @db.VarChar(255)
+  role         UserRole   @default(customer)
+  status       EntityStatus @default(active)
+
+  bookings      Booking[]
+  lockedTickets Ticket[]  @relation("SeatLockedBy")
+}
