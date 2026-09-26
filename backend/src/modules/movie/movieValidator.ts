@@ -12,8 +12,7 @@ export const createMovieSchema = z.object({
   trailerUrl: z.string().min(1, 'Trailer phim không được bỏ trống'),
   genreIds: z.array(z.int('Id thể loại không hợp lệ').positive('Id thể loại không hợp lệ')).min(1, 'Phim phải có ít nhất 1 thể loại'),
   releaseDate: z.coerce.date('Ngày khởi chiếu không hợp lệ'),
-  endDate: z.coerce.date('Ngày kết thúc chiếu không hợp lệ'),
-  status: z.enum(['coming_soon', 'now_showing'], 'Trạng thái không hợp lệ').optional(),
+  endDate: z.coerce.date('Ngày kết thúc chiếu không hợp lệ').optional(),
 });
 
 export const updateMovieSchema = createMovieSchema.partial();
