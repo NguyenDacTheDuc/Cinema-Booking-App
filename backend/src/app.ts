@@ -8,6 +8,9 @@ import genreRoute from './modules/genre/genreRoute';
 import movieRoute from './modules/movie/movieRoute';
 import seatTypeRoute from './modules/seatType/seatTypeRoute';
 import cinemaRoute from './modules/cinema/cinemaRoute';
+import userRoute from './modules/user/userRoute';
+import roomRoute from './modules/room/roomRoute';
+import seatRoute from './modules/seat/seatRoute';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +24,9 @@ app.use('/api', genreRoute);
 app.use('/api/movies', movieRoute);
 app.use('/api/seat-types', seatTypeRoute);
 app.use('/api', cinemaRoute);
+app.use('/api/users', userRoute);
+app.use('/api', roomRoute);
+app.use('/api', seatRoute);
 
 // errorHandler bắt buộc đặt sau cùng, sau mọi route
 app.use(errorHandler);
