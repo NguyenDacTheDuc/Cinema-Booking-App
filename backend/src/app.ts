@@ -11,6 +11,8 @@ import cinemaRoute from './modules/cinema/cinemaRoute';
 import userRoute from './modules/user/userRoute';
 import roomRoute from './modules/room/roomRoute';
 import seatRoute from './modules/seat/seatRoute';
+import showtimeRoute from './modules/showtime/showtimeRoute';
+import bookingRoute from './modules/booking/bookingRoute';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,7 +20,6 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-
 app.use('/api/auth', authRoute);
 app.use('/api', genreRoute);
 app.use('/api/movies', movieRoute);
@@ -27,7 +28,8 @@ app.use('/api', cinemaRoute);
 app.use('/api/users', userRoute);
 app.use('/api', roomRoute);
 app.use('/api', seatRoute);
-
+app.use('/api/showtimes', showtimeRoute);
+app.use('/api', bookingRoute);
 // errorHandler bắt buộc đặt sau cùng, sau mọi route
 app.use(errorHandler);
 

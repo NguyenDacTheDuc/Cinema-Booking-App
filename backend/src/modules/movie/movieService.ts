@@ -2,6 +2,7 @@ import { Prisma, MovieStatus } from '@prisma/client';
 import prisma from '../../config/prisma';
 import { AppError } from '../../utils/appError';
 import { CreateMovieInput, UpdateMovieInput } from './movieValidator';
+import { getTodayDate } from '../../utils/getTodayDate';
 
 // Kèm danh sách thể loại (chỉ lấy id, name) mỗi khi trả phim về
 const movieInclude = {
@@ -27,10 +28,6 @@ function toMovieGenreRows(genreIds: number[]) {
 // để so sánh đúng với cột releaseDate kiểu DATE (không có giờ).
 // Nếu dùng thẳng new Date() thì từ 0h đến 7h sáng giờ Việt Nam
 // server vẫn tính là ngày hôm trước (vì giờ UTC chậm hơn 7 tiếng).
-function getTodayDate(): Date {
-  const vietnamNow = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  return new Date(Date.UTC(vietnamNow.getUTCFullYear(), vietnamNow.getUTCMonth(), vietnamNow.getUTCDate()));
-}
 
 // Đã tới ngày khởi chiếu thì là đang chiếu, chưa tới thì là sắp chiếu
 function getStatusByReleaseDate(releaseDate: Date): MovieStatus {
