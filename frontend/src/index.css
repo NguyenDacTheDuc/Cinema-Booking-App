@@ -1,1 +1,24 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+/* Màu và font dùng chung toàn website, gọi trong class Tailwind như: bg-navy, text-sky, font-sans */
+@theme {
+  --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+
+  --color-navy: #1d2b45; /* nền header, footer, chữ tiêu đề */
+  --color-navy-dark: #15213a; /* ô tìm kiếm */
+  --color-sky: #4fc3f7; /* màu nhấn: nút, viền, link */
+  --color-sky-dark: #2fa8e0;
+  --color-title: #3c8dc5; /* tên phim */
+  --color-cream: #f7f7f2; /* nền phần nội dung */
+}
+
+body {
+  @apply bg-cream font-sans text-navy;
+}
+
+/* Hoa văn chấm mờ trên nền xanh đậm của header và footer */
+.bg-navy-pattern {
+  background-color: var(--color-navy);
+  background-image: radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 14px 14px;
+}

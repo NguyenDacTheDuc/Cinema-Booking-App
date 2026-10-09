@@ -173,9 +173,10 @@ model Booking {
 model User {
   id           Int        @id @default(autoincrement())
   avatar       String?    @db.VarChar(500) // nullable - chỉ thêm sau khi chỉnh sửa profile
-  gender       String     @db.VarChar(10)
-  phone        String     @db.VarChar(20)
+  gender       String?    @db.VarChar(10)
   dateOfBirth  DateTime   @db.Date
+  fullName     String     @db.VarChar(100)
+  phone        String     @db.VarChar(20)
   email        String     @unique @db.VarChar(150)
   passwordHash String     @db.VarChar(255)
   role         UserRole   @default(customer)

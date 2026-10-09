@@ -17,8 +17,8 @@ import bookingRoute from './modules/booking/bookingRoute';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
 app.use(cors());
+app.use(helmet());
 app.use(express.json());
 app.use('/api/auth', authRoute);
 app.use('/api', genreRoute);

@@ -51,6 +51,7 @@ async function seedAdmin() {
       role: 'admin',
       gender: 'male',
       phone: '0000000000',
+      fullName: 'Thế Đức',
       dateOfBirth: new Date('2000-01-01'),
     },
   });

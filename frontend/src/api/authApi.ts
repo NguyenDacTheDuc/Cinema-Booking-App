@@ -1,0 +1,19 @@
+import axiosClient from './axiosClient';
+import type { ApiResponse } from '../types/api';
+import type { AuthResult, LoginInput, RegisterInput, User } from '../types/auth';
+
+export async function login(input: LoginInput): Promise<AuthResult> {
+  const res = await axiosClient.post<ApiResponse<AuthResult>>('/auth/login', input);
+  return res.data.data;
+}
+
+export async function register(input: RegisterInput): Promise<AuthResult> {
+  const res = await axiosClient.post<ApiResponse<AuthResult>>('/auth/register', input);
+  return res.data.data;
+}
+
+// Lấy thông tin người dùng đang đăng nhập (dựa vào token gắn sẵn trong axiosClient)
+export async function getMe(): Promise<User> {
+  const res = await axiosClient.get<ApiResponse<User>>('/auth/me');
+  return res.data.data;
+}

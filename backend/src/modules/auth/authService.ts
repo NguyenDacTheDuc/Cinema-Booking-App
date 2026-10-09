@@ -13,17 +13,23 @@ function toSafeUser(user: User) {
   return safeUser;
 }
 
+// "2004-11-22" -> Date 2004-11-22T00:00:00.000Z (để ghi vào cột DATE)
+function toDateOnly(value: string): Date {
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
 export async function register(input: RegisterInput) {
   const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
 
   try {
+    // Đăng ký chỉ cần các thông tin bắt buộc.
     const user = await prisma.user.create({
       data: {
         email: input.email,
         passwordHash,
-        gender: input.gender,
+        fullName: input.fullName,
         phone: input.phone,
-        dateOfBirth: input.dateOfBirth,
+        dateOfBirth: toDateOnly(input.dateOfBirth),
       },
     });
 
@@ -74,10 +80,12 @@ export async function updateProfile(userId: number, input: UpdateProfileInput) {
   // Chỉ đưa vào những trường thực sự được gửi lên, bỏ qua trường undefined
   // (bắt buộc vì tsconfig bật exactOptionalPropertyTypes)
   const data: Prisma.UserUpdateInput = {};
+  if (input.fullName !== undefined) data.fullName = input.fullName;
   if (input.avatar !== undefined) data.avatar = input.avatar;
   if (input.phone !== undefined) data.phone = input.phone;
   if (input.gender !== undefined) data.gender = input.gender;
-  if (input.dateOfBirth !== undefined) data.dateOfBirth = input.dateOfBirth;
+  // Validator trả ngày sinh dạng chuỗi "YYYY-MM-DD", đổi sang Date trước khi lưu
+  if (input.dateOfBirth !== undefined) data.dateOfBirth = toDateOnly(input.dateOfBirth);
 
   const user = await prisma.user.update({ where: { id: userId }, data });
   return toSafeUser(user);

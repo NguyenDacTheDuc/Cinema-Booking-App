@@ -3,9 +3,9 @@ import { z } from 'zod';
 export const registerSchema = z.object({
   email: z.email('Email không hợp lệ'),
   password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-  gender: z.string().min(1, 'Vui lòng chọn giới tính'),
+  fullName: z.string().min(8, 'Vui lòng nhập tên đầy đủ'),
   phone: z.string().min(9, 'Số điện thoại không hợp lệ'),
-  dateOfBirth: z.coerce.date('Ngày sinh không hợp lệ'),
+  dateOfBirth: z.iso.date('Ngày sinh không hợp lệ (định dạng YYYY-MM-DD)'),
 });
 
 export const loginSchema = z.object({
@@ -15,9 +15,10 @@ export const loginSchema = z.object({
 
 export const updateProfileSchema = z.object({
   avatar: z.string().optional(),
-  phone: z.string().min(9, 'Số điện thoại không hợp lệ').optional(),
   gender: z.string().min(1, 'Giới tính không hợp lệ').optional(),
-  dateOfBirth: z.coerce.date('Ngày sinh không hợp lệ').optional(),
+  phone: z.string().min(9, 'Số điện thoại không hợp lệ').optional(),
+  dateOfBirth: z.iso.date('Ngày sinh không hợp lệ (định dạng YYYY-MM-DD)').optional(),
+  fullName: z.string().min(8, 'Vui lòng nhập tên đầy đủ').optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

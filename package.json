@@ -1,0 +1,28 @@
+{
+  "name": "cinemabooking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently -n BE,FE -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NguyenDacTheDuc/Cinema-Booking-App.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NguyenDacTheDuc/Cinema-Booking-App/issues"
+  },
+  "homepage": "https://github.com/NguyenDacTheDuc/Cinema-Booking-App#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}
