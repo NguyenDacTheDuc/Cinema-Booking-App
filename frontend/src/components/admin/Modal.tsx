@@ -5,11 +5,18 @@ interface ModalProps {
   title: string
   onClose: () => void
   children: ReactNode
+  size?: 'md' | 'lg' // md: form ngắn (thể loại, loại ghế); lg: form dài (phim)
+}
+
+const sizeClasses = {
+  md: 'max-w-lg',
+  lg: 'max-w-3xl',
 }
 
 // Khung nổi giữa màn hình (dùng cho form thêm/sửa ở các trang quản trị).
 // Đóng khi bấm nút X, bấm ra vùng tối bên ngoài hoặc nhấn phím Esc.
-function Modal({ title, onClose, children }: ModalProps) {
+// Nội dung dài hơn màn hình thì cuộn bên trong khung, tiêu đề vẫn giữ ở trên.
+function Modal({ title, onClose, children, size = 'md' }: ModalProps) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -25,7 +32,12 @@ function Modal({ title, onClose, children }: ModalProps) {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div role="dialog" aria-modal="true" aria-label={title} className="w-full max-w-lg rounded bg-white shadow-xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`flex max-h-full w-full flex-col rounded bg-white shadow-xl ${sizeClasses[size]}`}
+      >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-2xl font-semibold">{title}</h2>
           <button
@@ -37,7 +49,7 @@ function Modal({ title, onClose, children }: ModalProps) {
             ×
           </button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   )
