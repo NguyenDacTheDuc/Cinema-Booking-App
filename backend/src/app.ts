@@ -13,6 +13,7 @@ import roomRoute from './modules/room/roomRoute';
 import seatRoute from './modules/seat/seatRoute';
 import showtimeRoute from './modules/showtime/showtimeRoute';
 import bookingRoute from './modules/booking/bookingRoute';
+import dashboardRoute from './modules/dashboard/dashboardRoute';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +31,7 @@ app.use('/api', roomRoute);
 app.use('/api', seatRoute);
 app.use('/api/showtimes', showtimeRoute);
 app.use('/api', bookingRoute);
+app.use('/api/dashboard', dashboardRoute);
 // errorHandler bắt buộc đặt sau cùng, sau mọi route
 app.use(errorHandler);
 

@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { FilmIcon } from '../icons/Icons'
 
 const adminMenu = [
+  { label: 'Tổng quan', to: '/admin/dashboard' },
   { label: 'Khách hàng', to: '/admin/users' },
   { label: 'Phim', to: '/admin/movies' },
   { label: 'Thể loại', to: '/admin/genres' },
@@ -24,8 +25,8 @@ function AdminLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-cream md:flex-row">
-      <aside className="bg-navy-pattern shrink-0 text-white md:w-64">
-        <Link to="/admin/users" className="flex items-center gap-3 border-b border-white/10 px-6 py-5">
+      <aside className="bg-navy-pattern shrink-0 text-white md:sticky md:top-0 md:h-screen md:w-64 md:overflow-y-auto">
+        <Link to="/admin/dashboard" className="flex items-center gap-3 border-b border-white/10 px-6 py-5">
           <FilmIcon className="size-9 text-sky" />
           <span className="leading-none">
             <span className="block text-xl font-bold text-sky">CINEMA</span>

@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, useLocation } from 'react-router'
 import { getErrorMessage } from '../api/axiosClient'
 import { useAuth } from '../hooks/useAuth'
+import { getHomePath } from '../utils/redirect'
 
 // Kiểm tra dữ liệu ngay trên trình duyệt trước khi gửi lên backend
 const loginSchema = z.object({
@@ -19,7 +20,6 @@ const inputClass =
 
 function LoginPage() {
   const { user, login } = useAuth()
-  const navigate = useNavigate()
   const location = useLocation()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -29,19 +29,20 @@ function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) })
 
-  // Trang trước đó (nếu bị chuyển tới đây vì chưa đăng nhập), không có thì về trang chủ
-  const redirectTo = (location.state as { from?: string } | null)?.from ?? '/'
+  // Trang đang định mở trước khi bị chuyển tới đây vì chưa đăng nhập (nếu có)
+  const from = (location.state as { from?: string } | null)?.from
 
-  // Đã đăng nhập rồi thì không cần ở trang này
+  // Đã đăng nhập (kể cả ngay sau khi bấm Đăng nhập thành công):
+  // admin vào trang quản trị, khách hàng về trang đang xem hoặc trang chủ
   if (user) {
-    return <Navigate to={redirectTo} replace />
+    return <Navigate to={getHomePath(user.role, from)} replace />
   }
 
   async function onSubmit(data: LoginForm) {
     setServerError(null)
     try {
+      // Thành công thì user có giá trị, đoạn if (user) ở trên tự chuyển trang
       await login(data)
-      navigate(redirectTo, { replace: true })
     } catch (err) {
       setServerError(getErrorMessage(err))
     }

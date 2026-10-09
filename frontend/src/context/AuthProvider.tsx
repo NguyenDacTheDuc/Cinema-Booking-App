@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import * as authApi from '../api/authApi'
 import { TOKEN_KEY } from '../api/axiosClient'
-import type { LoginInput, User } from '../types/auth'
+import type { AuthResult, LoginInput, RegisterInput, User } from '../types/auth'
 import { AuthContext } from './authContext'
 
 // Bọc toàn bộ app để mọi trang, mọi component đều biết ai đang đăng nhập
@@ -23,11 +23,20 @@ function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false))
   }, [])
 
-  async function login(input: LoginInput) {
-    const result = await authApi.login(input)
+  // Lưu token và thông tin người dùng sau khi đăng nhập hoặc đăng ký thành công
+  function saveSession(result: AuthResult) {
     localStorage.setItem(TOKEN_KEY, result.token)
     setUser(result.user)
     return result.user
+  }
+
+  async function login(input: LoginInput) {
+    return saveSession(await authApi.login(input))
+  }
+
+  // Đăng ký xong backend trả luôn token, nên khách được đăng nhập ngay
+  async function register(input: RegisterInput) {
+    return saveSession(await authApi.register(input))
   }
 
   function logout() {
@@ -35,7 +44,7 @@ function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, loading, login, register, logout }}>{children}</AuthContext.Provider>
 }
 
 export default AuthProvider

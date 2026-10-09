@@ -50,7 +50,7 @@ function UserManagementPage() {
           <table className="w-full min-w-[800px] text-left">
             <thead className="bg-navy text-white">
               <tr>
-                <th className="px-4 py-3 font-semibold">ID</th>
+                <th className="px-4 py-3 font-semibold">STT</th>
                 <th className="px-4 py-3 font-semibold">Họ tên</th>
                 <th className="px-4 py-3 font-semibold">Email</th>
                 <th className="px-4 py-3 font-semibold">Số điện thoại</th>
@@ -60,11 +60,11 @@ function UserManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((user) => {
+              {rows.map((user, index) => {
                 const isActive = user.status === 'active'
                 return (
                   <tr key={user.id} className="border-t border-gray-200 hover:bg-cream">
-                    <td className="px-4 py-3">{user.id}</td>
+                    <td className="px-4 py-3">{index + 1}</td>
                     <td className="px-4 py-3 font-semibold">{user.fullName}</td>
                     <td className="px-4 py-3">{user.email}</td>
                     <td className="px-4 py-3">{user.phone}</td>
