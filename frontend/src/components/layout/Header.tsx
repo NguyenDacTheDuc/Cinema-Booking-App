@@ -5,23 +5,19 @@ import { useAuth } from '../../hooks/useAuth'
 import { SearchIcon } from '../icons/Icons'
 import Logo from './Logo'
 import NavBar from './NavBar'
+import UserMenu from './UserMenu'
 
 function Header() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [keyword, setKeyword] = useState(searchParams.get('search') ?? '')
-  const { user, loading, logout } = useAuth()
+  const { user, loading } = useAuth()
 
   // Tìm kiếm: chuyển về trang chủ kèm ?search=... để trang chủ hiển thị kết quả
   function handleSearch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const value = keyword.trim()
     navigate(value ? `/?search=${encodeURIComponent(value)}` : '/')
-  }
-
-  function handleLogout() {
-    logout()
-    navigate('/')
   }
 
   return (
@@ -46,11 +42,8 @@ function Header() {
           {/* Đang kiểm tra token đã lưu: tạm để trống, tránh nút Đăng nhập nháy lên rồi biến mất */}
           {!loading && (
             <div className="flex shrink-0 items-center gap-4">
-              {user ? (
+                            {user ? (
                 <>
-                  <span className="text-lg text-white">
-                    Xin chào, <span className="font-semibold text-sky">{user.fullName}</span>
-                  </span>
                   {/* Admin đang xem trang khách hàng: có lối quay lại trang quản trị */}
                   {user.role === 'admin' && (
                     <Link
@@ -60,13 +53,7 @@ function Header() {
                       Quản trị
                     </Link>
                   )}
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="border border-sky px-6 py-2.5 text-lg text-sky transition hover:bg-sky hover:text-white"
-                  >
-                    Đăng xuất
-                  </button>
+                  <UserMenu />
                 </>
               ) : (
                 <>

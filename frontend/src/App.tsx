@@ -16,6 +16,11 @@ import CinemaRoomsPage from './pages/admin/CinemaRoomsPage'
 import RoomSeatsPage from './pages/admin/RoomSeatsPage'
 import BookingManagementPage from './pages/admin/BookingManagementPage'
 import ShowtimeManagementPage from './pages/admin/ShowtimeManagementPage'
+import PrivateRoute from './components/auth/PrivateRoute'
+import AccountLayout from './components/layout/AccountLayout'
+import ChangePasswordPage from './pages/account/ChangePasswordPage'
+import MyTicketsPage from './pages/account/MyTicketsPage'
+import ProfilePage from './pages/account/ProfilePage'
 
 function App() {
   return (
@@ -26,6 +31,15 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        {/* Trang Tài khoản: phải đăng nhập mới vào được */}
+        <Route element={<PrivateRoute />}>
+          <Route path="account" element={<AccountLayout />}>
+            <Route index element={<Navigate to="tickets" replace />} />
+            <Route path="tickets" element={<MyTicketsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="password" element={<ChangePasswordPage />} />
+          </Route>
+        </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
 

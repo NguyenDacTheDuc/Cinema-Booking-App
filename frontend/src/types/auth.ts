@@ -32,3 +32,20 @@ export interface AuthResult {
   token: string;
   user: User;
 }
+
+export type Gender = 'male' | 'female' | 'other';
+
+// Sửa hồ sơ (PUT /auth/me): không gửi trường nào thì giữ nguyên trường đó
+export interface UpdateProfileInput {
+  fullName: string;
+  phone: string;
+  dateOfBirth: string; // dạng "YYYY-MM-DD"
+  gender?: Gender;
+  avatar?: string; // link ảnh
+}
+
+// Đổi mật khẩu: phải nhập đúng mật khẩu hiện tại
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
