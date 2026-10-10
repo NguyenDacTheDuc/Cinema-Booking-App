@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { MAX_SEATS_PER_BOOKING } from '../../config/constants';
 
+// Gửi danh sách rỗng [] = bỏ chọn hết, nhả toàn bộ ghế đang giữ ở suất này
 export const lockSeatsSchema = z.object({
   seatIds: z
     .array(z.int('Id ghế phải là số nguyên').positive('Id ghế không hợp lệ'), 'Danh sách ghế không hợp lệ')
-    .min(1, 'Vui lòng chọn ít nhất 1 ghế')
     .max(MAX_SEATS_PER_BOOKING, `Mỗi lần đặt chỉ được chọn tối đa ${MAX_SEATS_PER_BOOKING} ghế`),
 });
 

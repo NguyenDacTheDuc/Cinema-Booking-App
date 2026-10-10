@@ -3,7 +3,7 @@ import { Prisma, User } from '@prisma/client';
 import prisma from '../../config/prisma';
 import { signToken } from '../../utils/jwt';
 import { AppError } from '../../utils/appError';
-import { RegisterInput, LoginInput, UpdateProfileInput } from './authValidator';
+import { RegisterInput, LoginInput, UpdateProfileInput, PasswordChangeInput } from './authValidator';
 
 const SALT_ROUNDS = 10;
 
@@ -89,4 +89,23 @@ export async function updateProfile(userId: number, input: UpdateProfileInput) {
 
   const user = await prisma.user.update({ where: { id: userId }, data });
   return toSafeUser(user);
+}
+
+export async function changePassword(userId: number, input: PasswordChangeInput) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError('Không tìm thấy người dùng', 404);
+  }
+
+  // Phải nhập đúng mật khẩu đang dùng mới được đổi (phòng trường hợp người khác dùng máy đang đăng nhập sẵn).
+  // Trả 400 chứ không phải 401: người dùng vẫn đăng nhập hợp lệ, chỉ là nhập sai mật khẩu cũ
+  const isMatch = await bcrypt.compare(input.currentPassword, user.passwordHash);
+  if (!isMatch) {
+    throw new AppError('Mật khẩu hiện tại không đúng', 400);
+  }
+
+  const passwordHash = await bcrypt.hash(input.newPassword, SALT_ROUNDS);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+
+  return { message: 'Đổi mật khẩu thành công' };
 }

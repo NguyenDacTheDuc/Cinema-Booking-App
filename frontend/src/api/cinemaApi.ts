@@ -21,3 +21,8 @@ export async function updateCinema(id: number, input: CinemaInput): Promise<Cine
 export async function deleteCinema(id: number): Promise<void> {
   await axiosClient.delete(`/cinemas/${id}`);
 }
+
+export async function getActiveCinemas(): Promise<Cinema[]> {
+  const res = await axiosClient.get<ApiResponse<Cinema[]>>('/cinemas');
+  return res.data.data;
+}

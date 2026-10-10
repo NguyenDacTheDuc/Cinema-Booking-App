@@ -22,3 +22,8 @@ export async function updateShowtime(id: number, input: UpdateShowtimeInput): Pr
 export async function deleteShowtime(id: number): Promise<void> {
   await axiosClient.delete(`/showtimes/${id}`);
 }
+
+export async function getShowtimeById(id: number): Promise<Showtime> {
+  const res = await axiosClient.get<ApiResponse<Showtime>>(`/showtimes/${id}`);
+  return res.data.data;
+}

@@ -1,17 +1,20 @@
 import { Link } from 'react-router'
 import type { Movie } from '../../types/movie'
 import { formatDate } from '../../utils/format'
+import { getMoviePath, getShowtimePath } from '../../utils/slug'
 
 interface MovieCardProps {
   movie: Movie
 }
 
 function MovieCard({ movie }: MovieCardProps) {
-  const detailUrl = `/movies/${movie.id}`
+  // URL chỉ hiện tên phim không dấu, còn id được gửi kèm ngầm (state) để trang chi tiết gọi API /movies/:id
+  const detailUrl = getMoviePath(movie.title)
+  const detailState = { movieId: movie.id }
 
   return (
     <article className="flex flex-col">
-      <Link to={detailUrl} className="block overflow-hidden">
+      <Link to={detailUrl} state={detailState} className="block overflow-hidden">
         {movie.posterUrl ? (
           <img
             src={movie.posterUrl}
@@ -26,7 +29,7 @@ function MovieCard({ movie }: MovieCardProps) {
         )}
       </Link>
 
-      <Link to={detailUrl} className="mt-3 text-xl uppercase leading-snug text-title hover:text-sky">
+      <Link to={detailUrl} state={detailState} className="mt-3 text-xl uppercase leading-snug text-title hover:text-sky">
         {movie.title}
       </Link>
       <p className="mt-2">Khởi chiếu: {formatDate(movie.releaseDate)}</p>
@@ -34,8 +37,10 @@ function MovieCard({ movie }: MovieCardProps) {
 
       {/* mt-auto đẩy nút xuống đáy để các nút thẳng hàng dù tên phim dài ngắn khác nhau */}
       <div className="mt-auto pt-6 text-center">
+        {/* Sang trang lịch chiếu của riêng phim này, id và tên phim gửi kèm ngầm */}
         <Link
-          to={detailUrl}
+          to={getShowtimePath(movie.title)}
+          state={{ movieId: movie.id, movieTitle: movie.title }}
           className="inline-block border border-sky px-8 py-2.5 text-sky transition hover:bg-sky hover:text-white"
         >
           Mua Vé

@@ -26,5 +26,5 @@ export async function updateMe(input: UpdateProfileInput): Promise<User> {
 
 // Đổi mật khẩu (API backend sẽ bổ sung sau)
 export async function changePassword(input: ChangePasswordInput): Promise<void> {
-  await axiosClient.put('/auth/me/password', input);
+  await axiosClient.put('/auth/password', input);
 }

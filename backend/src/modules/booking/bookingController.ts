@@ -5,7 +5,7 @@ import { parseId } from '../../utils/parseId';
 
 export async function getSeatMap(req: Request, res: Response) {
   const showtimeId = parseId(req.params.showtimeId);
-  const seats = await bookingService.getSeatMap(showtimeId);
+  const seats = await bookingService.getSeatMap(showtimeId, req.user?.userId ?? null);
   sendSuccess(res, seats);
 }
 

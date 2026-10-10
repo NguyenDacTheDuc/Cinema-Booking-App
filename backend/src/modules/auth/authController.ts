@@ -34,3 +34,11 @@ export async function updateMe(req: Request, res: Response) {
   const user = await authService.updateProfile(req.user.userId, req.body);
   sendSuccess(res, user);
 }
+
+export async function changePassword(req: Request, res: Response) {
+  if (!req.user) {
+    throw new AppError('Vui lòng đăng nhập để tiếp tục', 401);
+  }
+  const result = await authService.changePassword(req.user.userId, req.body);
+  sendSuccess(res, result);
+}

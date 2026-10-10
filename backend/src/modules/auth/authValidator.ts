@@ -21,6 +21,17 @@ export const updateProfileSchema = z.object({
   fullName: z.string().min(8, 'Vui lòng nhập tên đầy đủ').optional(),
 });
 
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+    newPassword: z.string().min(6, 'Mật khẩu mới phải có ít nhất 6 ký tự'),
+  })
+  .refine((data) => data.newPassword !== data.currentPassword, {
+    message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+    path: ['newPassword'],
+  });
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;

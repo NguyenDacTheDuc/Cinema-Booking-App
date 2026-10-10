@@ -30,3 +30,26 @@ export interface Booking {
 export interface AdminBooking extends Booking {
   user: { id: number; email: string };
 }
+
+// ======================= Chọn ghế (trang mua vé) =======================
+
+export type SeatStatus = 'available' | 'locked' | 'booked';
+
+// Một ghế trong sơ đồ ghế của suất chiếu (GET /showtimes/:id/seats)
+export interface SeatMapItem {
+  id: number;
+  rowLabel: string;
+  columnNumber: number;
+  seatType: { id: number; name: string; price: string };
+  status: SeatStatus;
+  isMine: boolean; // ghế do chính tài khoản đang đăng nhập giữ
+  lockedUntil: string | null; // hạn giữ ghế (chỉ có với ghế của mình), dạng ISO
+}
+
+// Kết quả giữ ghế (POST /showtimes/:id/seats/lock)
+export interface SeatHold {
+  showtimeId: number;
+  lockedUntil: string | null;
+  seats: { id: number; rowLabel: string; columnNumber: number; seatType: { id: number; name: string; price: string } }[];
+  totalAmount: string;
+}

@@ -21,6 +21,10 @@ import AccountLayout from './components/layout/AccountLayout'
 import ChangePasswordPage from './pages/account/ChangePasswordPage'
 import MyTicketsPage from './pages/account/MyTicketsPage'
 import ProfilePage from './pages/account/ProfilePage'
+import AboutPage from './pages/AboutPage'
+import MovieDetailPage from './pages/MovieDetailPage'
+import ShowtimesPage from './pages/ShowtimesPage'
+import BookingPage from './pages/BookingPage'
 
 function App() {
   return (
@@ -31,6 +35,11 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="about" element={<AboutPage />} />
+        <Route path="movie/:slug" element={<MovieDetailPage />} />
+        <Route path="showtimes" element={<ShowtimesPage />} />
+        <Route path="showtime/:slug" element={<ShowtimesPage />} />
+        <Route path="booking/:showtimeId" element={<BookingPage />} />
         {/* Trang Tài khoản: phải đăng nhập mới vào được */}
         <Route element={<PrivateRoute />}>
           <Route path="account" element={<AccountLayout />}>

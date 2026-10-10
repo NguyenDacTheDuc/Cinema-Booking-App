@@ -23,7 +23,7 @@ function formatMoney(value: number | string) {
 }
 
 // Admin: xem sơ đồ ghế của 1 phòng và đổi loại ghế.
-// Chọn loại ghế ở trên, rồi bấm vào từng ghế (hoặc chữ cái đầu hàng để đổi cả hàng).
+// Chọn loại ghế ở trên, rồi bấm vào từng ghế (hoặc tên hàng để đổi cả hàng).
 function RoomSeatsPage() {
   const params = useParams()
   const cinemaId = Number(params.cinemaId)
@@ -101,7 +101,7 @@ function RoomSeatsPage() {
 
       <h1 className="mt-2 text-3xl font-bold">Sơ đồ ghế{room && ` - ${room.name}`}</h1>
       <p className="mt-2 text-lg text-navy/70">
-        Chọn loại ghế bên dưới, rồi bấm vào ghế để đổi. Bấm vào chữ cái đầu hàng để đổi cả hàng.
+        Chọn loại ghế bên dưới, rồi bấm vào ghế để đổi. Bấm vào tên hàng (Hàng A, Hàng B...) để đổi cả hàng.
       </p>
 
       {/* Chọn loại ghế để tô, kèm số ghế hiện có của mỗi loại */}
@@ -152,9 +152,9 @@ function RoomSeatsPage() {
                     type="button"
                     onClick={() => applySeatType(row.seats)}
                     title={`Đổi cả hàng ${row.label}`}
-                    className="w-8 shrink-0 rounded py-1 text-center font-semibold text-navy/60 hover:bg-cream hover:text-navy"
+                    className="w-20 shrink-0 whitespace-nowrap rounded py-1 text-left font-semibold text-navy/60 hover:bg-cream hover:text-navy"
                   >
-                    {row.label}
+                    Hàng {row.label}
                   </button>
                   {row.seats.map((seat) => (
                     <button
@@ -163,13 +163,16 @@ function RoomSeatsPage() {
                       onClick={() => applySeatType([seat])}
                       disabled={savingIds.includes(seat.id)}
                       title={`Ghế ${seat.rowLabel}${seat.columnNumber} - ${seat.seatType.name}`}
-                      className={`size-9 shrink-0 rounded-t-lg text-xs font-semibold transition hover:ring-2 hover:ring-title disabled:animate-pulse ${getColor(
+                      className={`h-9 w-11 shrink-0 rounded-t-lg text-xs font-semibold transition hover:ring-2 hover:ring-title disabled:animate-pulse ${getColor(
                         seat.seatTypeId,
                       )}`}
                     >
+                      {seat.rowLabel}
                       {seat.columnNumber}
                     </button>
                   ))}
+                  {/* Khoảng trống bên phải bằng đúng cột "Hàng A" bên trái, để dãy ghế nằm giữa, thẳng với màn hình */}
+                  <span className="w-20 shrink-0" aria-hidden="true" />
                 </div>
               ))}
             </div>

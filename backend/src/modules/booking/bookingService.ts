@@ -160,20 +160,31 @@ async function findBookingDetail(id: number) {
 
 // Công khai: sơ đồ ghế của 1 suất chiếu kèm trạng thái từng ghế.
 // Không trả lockedByUserId để không lộ ai đang giữ ghế.
-export async function getSeatMap(showtimeId: number) {
+// Có đăng nhập thì đánh dấu thêm ghế do chính khách đó giữ (isMine) kèm hạn giữ để frontend đếm ngược
+// (F5 trang vẫn biết ghế nào là của mình, còn bao lâu).
+export async function getSeatMap(showtimeId: number, userId: number | null) {
   await findShowtimeOrThrow(showtimeId);
   await releaseExpiredLocks(showtimeId);
 
   const tickets = await prisma.ticket.findMany({
     where: { showtimeId },
-    select: { status: true, seat: { select: seatSelect } },
+    select: { status: true, lockedByUserId: true, lockedUntil: true, seat: { select: seatSelect } },
     orderBy: ticketOrderBy,
   });
 
-  return tickets.map((ticket) => ({ ...ticket.seat, status: ticket.status }));
+  return tickets.map((ticket) => {
+    const isMine = userId !== null && ticket.status === 'locked' && ticket.lockedByUserId === userId;
+    return {
+      ...ticket.seat,
+      status: ticket.status,
+      isMine,
+      lockedUntil: isMine ? ticket.lockedUntil : null,
+    };
+  });
 }
 
-// Khách: giữ ghế trong SEAT_LOCK_MINUTES phút
+// Khách: giữ ghế trong SEAT_LOCK_MINUTES phút (tính từ lần giữ ghế đầu tiên).
+// Gửi danh sách rỗng = nhả hết ghế đang giữ ở suất này.
 export async function lockSeats(userId: number, showtimeId: number, input: LockSeatsInput) {
   // Loại id ghế trùng, tránh đếm sai số vé giữ được ở bước kiểm tra cuối
   const seatIds = [...new Set(input.seatIds)];
@@ -210,15 +221,21 @@ export async function lockSeats(userId: number, showtimeId: number, input: LockS
     throw new AppError('Có ghế không thuộc phòng chiếu của suất chiếu này', 400);
   }
 
-  // Các ghế khách đang giữ ở suất này (nếu có) sẽ được nhả trước khi giữ ghế mới
+  // Các ghế khách đang giữ ở suất này (nếu có) sẽ được nhả trước khi giữ ghế mới.
+  // Lấy kèm hạn giữ để ghế mới dùng chung hạn giữ cũ.
   const myOldTickets = await prisma.ticket.findMany({
     where: { showtimeId, lockedByUserId: userId, status: 'locked' },
-    select: { id: true },
+    select: { id: true, lockedUntil: true },
   });
 
   try {
     await prisma.$transaction(async (tx) => {
       const now = new Date();
+
+      // Thời hạn giữ ghế tính từ lần giữ đầu tiên: chọn thêm hay bỏ bớt ghế không làm đồng hồ quay lại 5 phút
+      // (tránh bấm liên tục để giữ ghế mãi). Chưa giữ ghế nào còn hạn thì tính 5 phút từ bây giờ.
+      const currentDeadline = myOldTickets.find((t) => t.lockedUntil && t.lockedUntil > now)?.lockedUntil;
+      const lockedUntil = currentDeadline ?? new Date(now.getTime() + SEAT_LOCK_MINUTES * MS_PER_MINUTE);
 
       // 1. Nhả các ghế cũ của chính khách ở suất này (đổi ý chọn ghế khác).
       //    Cập nhật theo id để database chỉ khóa đúng các dòng vé đó.
@@ -243,7 +260,7 @@ export async function lockSeats(userId: number, showtimeId: number, input: LockS
         data: {
           status: 'locked',
           lockedByUserId: userId,
-          lockedUntil: new Date(now.getTime() + SEAT_LOCK_MINUTES * MS_PER_MINUTE),
+          lockedUntil,
         },
       });
 

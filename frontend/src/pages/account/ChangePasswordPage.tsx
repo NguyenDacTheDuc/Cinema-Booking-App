@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import axios from 'axios'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -42,6 +43,7 @@ function ChangePasswordPage() {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<PasswordForm>({
     resolver: zodResolver(passwordSchema),
@@ -56,7 +58,14 @@ function ChangePasswordPage() {
       reset()
       setDone(true)
     } catch (err) {
-      setServerError(getErrorMessage(err))
+      const message = getErrorMessage(err)
+      // Lỗi 400 từ backend là nhập sai mật khẩu hiện tại: báo ngay dưới ô đó.
+      // Gắn vào ô nên khi sửa lại ô này, lỗi tự mất như các lỗi kiểm tra khác
+      if (axios.isAxiosError(err) && err.response?.status === 400) {
+        setError('currentPassword', { type: 'server', message })
+      } else {
+        setServerError(message)
+      }
     }
   }
 
@@ -65,7 +74,12 @@ function ChangePasswordPage() {
       <h1 className="text-3xl font-bold">Đổi mật khẩu</h1>
       <p className="mt-2 text-lg text-navy/70">Mật khẩu mới phải có ít nhất 6 ký tự và khác mật khẩu hiện tại.</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 max-w-xl rounded-lg bg-white p-6 shadow-sm md:p-8">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        onChange={() => setServerError(null)}
+        noValidate
+        className="mt-6 max-w-xl rounded-lg bg-white p-6 shadow-sm md:p-8"
+      >
         <div className="space-y-5">
           {fields.map((field, index) => (
             <div key={field.name}>

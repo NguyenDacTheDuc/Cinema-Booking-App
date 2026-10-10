@@ -4,10 +4,11 @@ import { authenticate } from '../../middlewares/authenticate';
 import { validate } from '../../middlewares/validate';
 import { createBookingSchema, lockSeatsSchema } from './bookingValidator';
 import { requireAdmin } from '../../middlewares/authorization';
+import { optionalAuthenticate } from '../../middlewares/optionalAuthenticate';
 
 const router = Router();
 
-router.get('/showtimes/:showtimeId/seats', bookingController.getSeatMap);
+router.get('/showtimes/:showtimeId/seats', optionalAuthenticate, bookingController.getSeatMap);
 router.post('/showtimes/:showtimeId/seats/lock', authenticate, validate(lockSeatsSchema), bookingController.lockSeats);
 router.post('/bookings', authenticate, validate(createBookingSchema), bookingController.createBooking);
 router.get('/bookings/me', authenticate, bookingController.getMyBookings);
