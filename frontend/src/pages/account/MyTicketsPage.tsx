@@ -58,7 +58,9 @@ function TicketCard({ booking, watched }: { booking: Booking; watched: boolean }
                 </span>
               )}
             </h2>
-            <p className="text-sm text-navy/60">Mã đơn #{booking.id}</p>
+            <p className="text-sm text-navy/60">
+              Mã đặt vé <span className="font-mono font-semibold text-navy">{booking.bookingCode}</span>
+            </p>
           </div>
           <span className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${status.className}`}>
             {status.label}
@@ -88,7 +90,15 @@ function TicketCard({ booking, watched }: { booking: Booking; watched: boolean }
           </div>
         </dl>
 
-        <p className="mt-auto pt-3 text-sm text-navy/60">{showtime.room.cinema.address}</p>
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
+          <p className="text-sm text-navy/60">{showtime.room.cinema.address}</p>
+          <Link
+            to={`/tickets/${booking.id}`}
+            className="whitespace-nowrap rounded border border-title px-4 py-1.5 font-semibold text-title transition hover:bg-title hover:text-white"
+          >
+            Xem vé điện tử
+          </Link>
+        </div>
       </div>
     </article>
   )

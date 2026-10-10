@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 import { Prisma } from '@prisma/client';
 import prisma from '../../config/prisma';
 import { SEAT_LOCK_MINUTES, ONLINE_SALES_CUTOFF_MINUTES } from '../../config/constants';
@@ -9,6 +10,14 @@ import { LockSeatsInput, CreateBookingInput } from './bookingValidator';
 const MS_PER_MINUTE = 60 * 1000;
 
 const SEATS_TAKEN_MESSAGE = 'Một số ghế bạn chọn vừa có người khác giữ hoặc đã được đặt, vui lòng chọn ghế khác';
+
+// Mã đặt vé: "CB" + 8 ký tự ngẫu nhiên, ví dụ "CB7K2M9QXA".
+// Bỏ các ký tự dễ đọc nhầm (0/O, 1/I/L) vì khách có thể đọc mã cho nhân viên tại quầy.
+const BOOKING_CODE_PREFIX = 'CB';
+const BOOKING_CODE_LENGTH = 8;
+const BOOKING_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+// Số lần sinh lại mã nếu trùng (gần như không xảy ra: có hơn 800 tỷ mã khác nhau)
+const MAX_BOOKING_CODE_ATTEMPTS = 3;
 
 // ======================= Dữ liệu trả về =======================
 
@@ -80,6 +89,20 @@ function formatBooking<T extends BookingWithRelations>(booking: T) {
 }
 
 // ======================= Hàm hỗ trợ =======================
+
+// Sinh mã đặt vé ngẫu nhiên (randomInt của crypto, không đoán trước được như Math.random)
+function generateBookingCode(): string {
+  let code = BOOKING_CODE_PREFIX;
+  for (let i = 0; i < BOOKING_CODE_LENGTH; i++) {
+    code += BOOKING_CODE_CHARS[randomInt(BOOKING_CODE_CHARS.length)];
+  }
+  return code;
+}
+
+// Prisma P2002: trùng giá trị cột unique. Lúc tạo đơn chỉ có thể là trùng mã đặt vé.
+function isDuplicateBookingCode(err: unknown): boolean {
+  return err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
+}
 
 // Prisma P2034: transaction thất bại do xung đột ghi hoặc deadlock
 // (xảy ra khi nhiều người tranh cùng ghế trong cùng một khoảnh khắc)
@@ -280,76 +303,89 @@ export async function lockSeats(userId: number, showtimeId: number, input: LockS
   return getMyHold(userId, showtimeId);
 }
 
+// Chuyển các ghế khách đang giữ (còn hạn) thành vé đã đặt và tạo đơn, tất cả trong 1 transaction.
+// Trả về id đơn, hoặc null nếu khách không còn giữ ghế nào.
+async function bookHeldTickets(userId: number, showtimeId: number): Promise<number | null> {
+  return prisma.$transaction(async (tx) => {
+    const now = new Date();
+
+    // Chỉ lấy ghế do chính khách này giữ và còn hạn, nên không thể thanh toán ghế của người khác
+    const heldTickets = await tx.ticket.findMany({
+      where: { showtimeId, lockedByUserId: userId, status: 'locked', lockedUntil: { gt: now } },
+      select: { id: true, seat: { select: { seatType: { select: { id: true, price: true } } } } },
+    });
+    if (heldTickets.length === 0) {
+      return null;
+    }
+
+    // Chốt giá theo loại ghế tại thời điểm thanh toán.
+    // Gom vé theo loại ghế để mỗi loại chỉ cần 1 câu UPDATE.
+    let totalAmount = new Prisma.Decimal(0);
+    const ticketsBySeatType = new Map<number, { price: Prisma.Decimal; ticketIds: number[] }>();
+    for (const ticket of heldTickets) {
+      const { id: seatTypeId, price } = ticket.seat.seatType;
+      totalAmount = totalAmount.plus(price);
+      const group = ticketsBySeatType.get(seatTypeId);
+      if (group) {
+        group.ticketIds.push(ticket.id);
+      } else {
+        ticketsBySeatType.set(seatTypeId, { price, ticketIds: [ticket.id] });
+      }
+    }
+
+    // Chưa tích hợp cổng thanh toán: tạo đơn ở trạng thái đã xác nhận luôn.
+    // (pending để dành cho lúc chờ cổng thanh toán báo kết quả)
+    const booking = await tx.booking.create({
+      data: { bookingCode: generateBookingCode(), userId, showtimeId, totalAmount, status: 'confirmed' },
+      select: { id: true },
+    });
+
+    // Chuyển vé sang booked, vẫn kèm điều kiện "khách này còn đang giữ và còn hạn":
+    // nếu hết hạn giữ đúng lúc thanh toán thì không bán trùng ghế cho người khác
+    let bookedCount = 0;
+    for (const { price, ticketIds } of ticketsBySeatType.values()) {
+      const { count } = await tx.ticket.updateMany({
+        where: { id: { in: ticketIds }, lockedByUserId: userId, status: 'locked', lockedUntil: { gt: now } },
+        data: {
+          status: 'booked',
+          bookingId: booking.id,
+          priceAtBooking: price,
+          lockedByUserId: null,
+          lockedUntil: null,
+        },
+      });
+      bookedCount += count;
+    }
+
+    // Có vé không chuyển được: hủy toàn bộ, kể cả đơn vừa tạo (rollback)
+    if (bookedCount !== heldTickets.length) {
+      throw new HoldLostError();
+    }
+    return booking.id;
+  });
+}
+
 // Khách: thanh toán (giả lập) các ghế đang giữ ở 1 suất chiếu.
 // Không kiểm tra mốc ngừng bán: ghế còn trong thời gian giữ là được thanh toán.
 export async function createBooking(userId: number, input: CreateBookingInput) {
   const { showtimeId } = input;
   await findShowtimeOrThrow(showtimeId);
 
-  let bookingId: number | null;
-  try {
-    bookingId = await prisma.$transaction(async (tx) => {
-      const now = new Date();
-
-      // Chỉ lấy ghế do chính khách này giữ và còn hạn, nên không thể thanh toán ghế của người khác
-      const heldTickets = await tx.ticket.findMany({
-        where: { showtimeId, lockedByUserId: userId, status: 'locked', lockedUntil: { gt: now } },
-        select: { id: true, seat: { select: { seatType: { select: { id: true, price: true } } } } },
-      });
-      if (heldTickets.length === 0) {
-        return null;
+  let bookingId: number | null = null;
+  for (let attempt = 1; attempt <= MAX_BOOKING_CODE_ATTEMPTS; attempt++) {
+    try {
+      bookingId = await bookHeldTickets(userId, showtimeId);
+      break;
+    } catch (err) {
+      // Trùng mã đặt vé: toàn bộ đã được hủy (rollback), sinh mã mới và làm lại
+      if (isDuplicateBookingCode(err) && attempt < MAX_BOOKING_CODE_ATTEMPTS) {
+        continue;
       }
-
-      // Chốt giá theo loại ghế tại thời điểm thanh toán.
-      // Gom vé theo loại ghế để mỗi loại chỉ cần 1 câu UPDATE.
-      let totalAmount = new Prisma.Decimal(0);
-      const ticketsBySeatType = new Map<number, { price: Prisma.Decimal; ticketIds: number[] }>();
-      for (const ticket of heldTickets) {
-        const { id: seatTypeId, price } = ticket.seat.seatType;
-        totalAmount = totalAmount.plus(price);
-        const group = ticketsBySeatType.get(seatTypeId);
-        if (group) {
-          group.ticketIds.push(ticket.id);
-        } else {
-          ticketsBySeatType.set(seatTypeId, { price, ticketIds: [ticket.id] });
-        }
+      // Mất quyền giữ ghế giữa chừng, hoặc 2 lần bấm thanh toán chạy song song
+      if (err instanceof HoldLostError || isWriteConflict(err)) {
+        bookingId = null;
+        break;
       }
-
-      // Chưa tích hợp cổng thanh toán: tạo đơn ở trạng thái đã xác nhận luôn.
-      // (pending để dành cho lúc chờ cổng thanh toán báo kết quả)
-      const booking = await tx.booking.create({
-        data: { userId, showtimeId, totalAmount, status: 'confirmed' },
-        select: { id: true },
-      });
-
-      // Chuyển vé sang booked, vẫn kèm điều kiện "khách này còn đang giữ và còn hạn":
-      // nếu hết hạn giữ đúng lúc thanh toán thì không bán trùng ghế cho người khác
-      let bookedCount = 0;
-      for (const { price, ticketIds } of ticketsBySeatType.values()) {
-        const { count } = await tx.ticket.updateMany({
-          where: { id: { in: ticketIds }, lockedByUserId: userId, status: 'locked', lockedUntil: { gt: now } },
-          data: {
-            status: 'booked',
-            bookingId: booking.id,
-            priceAtBooking: price,
-            lockedByUserId: null,
-            lockedUntil: null,
-          },
-        });
-        bookedCount += count;
-      }
-
-      // Có vé không chuyển được: hủy toàn bộ, kể cả đơn vừa tạo (rollback)
-      if (bookedCount !== heldTickets.length) {
-        throw new HoldLostError();
-      }
-      return booking.id;
-    });
-  } catch (err) {
-    // Mất quyền giữ ghế giữa chừng, hoặc 2 lần bấm thanh toán chạy song song
-    if (err instanceof HoldLostError || isWriteConflict(err)) {
-      bookingId = null;
-    } else {
       throw err;
     }
   }

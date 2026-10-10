@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { FilmIcon } from '../icons/Icons'
 
 // Thông tin rạp: thay bằng thông tin thật của bạn
@@ -10,7 +11,12 @@ const cinemaInfo = {
 
 const CURRENT_YEAR = new Date().getFullYear()
 
-const policyLinks = ['Chính sách bảo mật', 'Điều khoản sử dụng', 'Hướng dẫn đặt vé']
+// Trang nào chưa làm thì để to rỗng (tạm chưa bấm được)
+const policyLinks = [
+  { label: 'Chính sách bảo mật', to: '/privacy-policy' },
+  { label: 'Điều khoản sử dụng', to: '/terms' },
+  { label: 'Hướng dẫn đặt vé', to: '/booking-guide' },
+]
 
 function Footer() {
   return (
@@ -27,10 +33,14 @@ function Footer() {
         <div className="flex-1 py-6">
           <ul className="flex flex-wrap gap-x-12 gap-y-2 text-xl font-light">
             {policyLinks.map((link) => (
-              <li key={link}>
-                <a href="#" className="hover:text-sky">
-                  {link}
-                </a>
+              <li key={link.label}>
+                {link.to ? (
+                  <Link to={link.to} className="hover:text-sky">
+                    {link.label}
+                  </Link>
+                ) : (
+                  <span className="cursor-default">{link.label}</span>
+                )}
               </li>
             ))}
           </ul>
@@ -61,7 +71,7 @@ function Footer() {
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-1 px-4 py-4 text-lg text-white/80 sm:flex-row">
           <p>Copyright © {CURRENT_YEAR} - All rights reserved</p>
           <p>
-            Developed by <span className="text-sky">Thế Đức</span>
+            Developed by <span className="text-sky">Nguyễn Đắc Thế Đức</span>
           </p>
         </div>
       </div>

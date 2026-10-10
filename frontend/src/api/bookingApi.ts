@@ -14,6 +14,18 @@ export async function getMyBookings(): Promise<Booking[]> {
   return res.data.data;
 }
 
+// Khách hàng: chi tiết 1 đơn (vé điện tử). Chỉ chủ đơn hoặc admin xem được
+export async function getBookingById(id: number): Promise<Booking> {
+  const res = await axiosClient.get<ApiResponse<Booking>>(`/bookings/${id}`);
+  return res.data.data;
+}
+
+// Khách hàng: thanh toán các ghế đang giữ ở 1 suất chiếu, tạo đơn và trả về đơn vừa tạo
+export async function createBooking(showtimeId: number): Promise<Booking> {
+  const res = await axiosClient.post<ApiResponse<Booking>>('/bookings', { showtimeId });
+  return res.data.data;
+}
+
 // Sơ đồ ghế của 1 suất chiếu. Có đăng nhập thì backend đánh dấu thêm ghế của mình (isMine)
 export async function getSeatMap(showtimeId: number): Promise<SeatMapItem[]> {
   const res = await axiosClient.get<ApiResponse<SeatMapItem[]>>(`/showtimes/${showtimeId}/seats`);

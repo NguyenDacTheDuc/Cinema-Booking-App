@@ -10,6 +10,7 @@ export interface BookingTicket {
 // Đơn đặt vé (GET /bookings/:id, GET /bookings/me)
 export interface Booking {
   id: number;
+  bookingCode: string;
   userId: number;
   showtimeId: number;
   createdAt: string; // dạng ISO

@@ -475,23 +475,26 @@ function MovieManagementPage() {
           <h1 className="text-3xl font-bold">Quản lý phim</h1>
           <p className="mt-2 text-lg text-navy/70">Trạng thái phim tự cập nhật theo ngày khởi chiếu.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => openForm(null)}
-          disabled={!genres}
-          className="rounded bg-title px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-navy disabled:opacity-60"
-        >
-          + Thêm phim
-        </button>
-      </div>
 
-      <input
-        type="search"
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        placeholder="Tìm theo tên phim..."
-        className="mt-6 w-full max-w-sm rounded border border-gray-300 bg-white px-4 py-2.5 text-lg focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/40"
-      />
+        {/* Ô tìm kiếm và nút thêm phim nằm cùng hàng bên phải */}
+        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+          <input
+            type="search"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="Tìm theo tên phim..."
+            className="w-full rounded border border-gray-300 bg-white px-4 py-2.5 text-lg focus:border-sky focus:outline-none focus:ring-2 focus:ring-sky/40 sm:w-80"
+          />
+          <button
+            type="button"
+            onClick={() => openForm(null)}
+            disabled={!genres}
+            className="whitespace-nowrap rounded bg-title px-5 py-2.5 text-lg font-semibold text-white transition hover:bg-navy disabled:opacity-60"
+          >
+            + Thêm phim
+          </button>
+        </div>
+      </div>
 
       {/* Chỉ báo lỗi (ví dụ xóa phim đã có suất chiếu); thành công thì không hiện gì */}
       {actionError && <p className="mt-4 rounded bg-red-50 px-4 py-3 text-red-600">{actionError}</p>}

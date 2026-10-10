@@ -180,6 +180,7 @@ async function getLatestBookings() {
     take: LATEST_BOOKING_LIMIT,
     select: {
       id: true,
+      bookingCode: true,
       createdAt: true,
       totalAmount: true,
       user: { select: { id: true, fullName: true, email: true } },
@@ -200,6 +201,7 @@ async function getLatestBookings() {
 
   return bookings.map((booking) => ({
     id: booking.id,
+    bookingCode: booking.bookingCode,
     createdAt: booking.createdAt,
     totalAmount: Number(booking.totalAmount),
     user: booking.user,

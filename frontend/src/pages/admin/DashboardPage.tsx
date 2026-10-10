@@ -313,7 +313,7 @@ function LatestBookings({ bookings }: { bookings: LatestBooking[] }) {
           <table className="w-full text-left">
             <thead className="border-b border-gray-200 text-navy/60">
               <tr>
-                <th className={thClass}>Mã đơn</th>
+                <th className={thClass}>Mã đặt vé</th>
                 <th className={thClass}>Khách hàng</th>
                 <th className={thClass}>Phim</th>
                 <th className={thClass}>Suất chiếu</th>
@@ -325,7 +325,7 @@ function LatestBookings({ bookings }: { bookings: LatestBooking[] }) {
             <tbody>
               {bookings.map((booking) => (
                 <tr key={booking.id} className="border-b border-gray-100 last:border-0">
-                  <td className={`${tdClass} font-semibold`}>#{booking.id}</td>
+                  <td className={`${tdClass} font-mono font-semibold`}>{booking.bookingCode}</td>
                   <td className={tdClass}>{booking.user.fullName}</td>
                   <td className={tdClass}>{booking.showtime.movie.title}</td>
                   <td className={tdClass}>

@@ -45,6 +45,7 @@ export interface TodayShowtime {
 
 export interface LatestBooking {
   id: number;
+  bookingCode: string;
   createdAt: string; // dạng ISO
   totalAmount: number;
   user: { id: number; fullName: string; email: string };

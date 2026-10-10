@@ -159,6 +159,7 @@ model Ticket {
 
 model Booking {
   id          Int           @id @default(autoincrement())
+  bookingCode String        @unique @db.VarChar(12) // mã đặt vé in trên vé điện tử, ví dụ "CB7K2M9QXA"
   userId      Int
   showtimeId  Int
   createdAt   DateTime      @default(now())

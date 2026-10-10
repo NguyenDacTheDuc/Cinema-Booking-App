@@ -4,11 +4,13 @@ import { getErrorMessage } from '../api/axiosClient'
 import { getSeatMap, lockSeats } from '../api/bookingApi'
 import { getSeatTypes } from '../api/seatTypeApi'
 import { getShowtimeById } from '../api/showtimeApi'
+import BookingSteps from '../components/booking/BookingSteps'
+import ShowtimeHero from '../components/booking/ShowtimeHero'
+import NoticeModal from '../components/common/NoticeModal'
 import { useAuth } from '../hooks/useAuth'
 import { useFetch } from '../hooks/useFetch'
 import type { SeatMapItem } from '../types/booking'
 import { formatMoney } from '../utils/format'
-import { getMoviePath } from '../utils/slug'
 
 const MAX_SEATS = 8
 // Khớp với quy định backend: ngừng bán vé trực tuyến trước giờ chiếu 15 phút
@@ -35,46 +37,8 @@ function getTimestamp() {
   return Date.now()
 }
 
-// "2026-10-10" -> "10/10/2026"
-function formatShowDate(value: string) {
-  return value.split('-').reverse().join('/')
-}
-
 function getSeatLabel(seat: { rowLabel: string; columnNumber: number }) {
   return `${seat.rowLabel}${seat.columnNumber}`
-}
-
-// Thông báo nổi giữa màn hình (ghế bị người khác giữ, hết thời gian giữ ghế...)
-function NoticeModal({ title, message, onClose }: { title: string; message: string; onClose: () => void }) {
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-lg bg-white p-6 text-center shadow-xl">
-        <p className="text-xl font-bold">{title}</p>
-        <p className="mt-3 text-navy/70">{message}</p>
-        <button
-          type="button"
-          onClick={onClose}
-          autoFocus
-          className="mt-6 rounded bg-title px-8 py-2.5 font-semibold text-white transition hover:bg-navy"
-        >
-          Đã hiểu
-        </button>
-      </div>
-    </div>
-  )
 }
 
 // Trang chọn ghế của 1 suất chiếu: /booking/:showtimeId
@@ -215,46 +179,22 @@ function BookingPage() {
     )
   }
 
-  const { movie, room } = showtime
   const minutes = String(Math.floor((secondsLeft ?? 0) / 60)).padStart(2, '0')
   const seconds = String((secondsLeft ?? 0) % 60).padStart(2, '0')
 
   return (
     <div>
       {/* Thông tin suất chiếu, cùng kiểu khối tiêu đề các trang khác */}
-      <section className="bg-navy-pattern text-white">
-        <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-8 md:gap-8 md:py-10">
-          {movie.posterUrl && (
-            <Link to={getMoviePath(movie.title)} state={{ movieId: movie.id }} className="shrink-0">
-              <img
-                src={movie.posterUrl}
-                alt={movie.title}
-                className="aspect-[2/3] w-20 rounded object-cover shadow-lg md:w-28"
-              />
-            </Link>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky">Chọn ghế</p>
-            <h1 className="mt-1 text-2xl font-bold uppercase md:text-4xl">
-              {movie.title}
-              {movie.ageRating && (
-                <span className="ml-3 rounded bg-red-600 px-2 py-0.5 align-middle text-sm font-bold">{movie.ageRating}</span>
-              )}
-            </h1>
-            <p className="mt-2 text-lg text-white/85">
-              {formatShowDate(showtime.showDate)} · {showtime.startTime} - {showtime.endTime} · {room.name} ·{' '}
-              {room.cinema.name}
-            </p>
-            <span
-              className={`mt-3 inline-block rounded-full px-4 py-1 text-sm font-semibold ${
-                salesClosed ? 'bg-red-600 text-white' : 'bg-sky/20 text-sky'
-              }`}
-            >
-              {salesClosed ? 'Hết giờ đặt vé' : `Chọn tối đa ${MAX_SEATS} ghế`}
-            </span>
-          </div>
-        </div>
-      </section>
+      <ShowtimeHero eyebrow="Chọn ghế" showtime={showtime}>
+        <span
+          className={`mt-3 inline-block rounded-full px-4 py-1 text-sm font-semibold ${
+            salesClosed ? 'bg-red-600 text-white' : 'bg-sky/20 text-sky'
+          }`}
+        >
+          {salesClosed ? 'Hết giờ đặt vé' : `Chọn tối đa ${MAX_SEATS} ghế`}
+        </span>
+      </ShowtimeHero>
+      <BookingSteps current={1} />
 
       <div className="mx-auto max-w-7xl px-4 py-8">
         {!user && !salesClosed && (
@@ -368,9 +308,10 @@ function BookingPage() {
                 <p className="text-sm text-navy/60">Tạm tính</p>
                 <p className="text-2xl font-bold text-title">{formatMoney(totalAmount)}</p>
               </div>
-              {/* Chưa làm: bấm Thanh toán sẽ sang bước xác nhận và thanh toán (POST /bookings) */}
+              {/* Sang bước thanh toán: ghế đã giữ ở backend nên trang thanh toán tự lấy lại, không cần gửi kèm */}
               <button
                 type="button"
+                onClick={() => navigate(`/checkout/${showtimeId}`)}
                 disabled={!holdActive || saving}
                 className="rounded bg-title px-8 py-3 text-lg font-semibold text-white transition hover:bg-navy disabled:cursor-not-allowed disabled:bg-gray-300"
               >

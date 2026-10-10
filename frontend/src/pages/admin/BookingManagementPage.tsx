@@ -43,7 +43,7 @@ function BookingDetailModal({ booking, onClose }: { booking: AdminBooking; onClo
   const { showtime } = booking
 
   return (
-    <Modal title={`Đơn đặt vé #${booking.id}`} onClose={onClose} size="lg">
+    <Modal title={`Đơn đặt vé ${booking.bookingCode}`} onClose={onClose} size="lg">
       <div className="flex flex-col gap-6 sm:flex-row">
         {showtime.movie.posterUrl ? (
           <img
@@ -143,13 +143,13 @@ function BookingManagementPage() {
   const [status, setStatus] = useState<BookingStatus | ''>('')
   const [detail, setDetail] = useState<AdminBooking | null>(null)
 
-  // Lọc ngay trên trình duyệt: tìm theo mã đơn, email khách hoặc tên phim
-  const keyword = search.trim().toLowerCase().replace(/^#/, '')
+  // Lọc ngay trên trình duyệt: tìm theo mã đặt vé, email khách hoặc tên phim
+  const keyword = search.trim().toLowerCase()
   const rows = (bookings ?? []).filter((booking) => {
     if (status && booking.status !== status) return false
     if (!keyword) return true
     return (
-      String(booking.id) === keyword ||
+      booking.bookingCode.toLowerCase().includes(keyword) ||
       booking.user.email.toLowerCase().includes(keyword) ||
       booking.showtime.movie.title.toLowerCase().includes(keyword)
     )
@@ -171,7 +171,7 @@ function BookingManagementPage() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm mã đơn, email, tên phim..."
+          placeholder="Tìm mã đặt vé, email, tên phim..."
           className={`${filterClass} w-full sm:w-80`}
         />
         <select
@@ -204,7 +204,7 @@ function BookingManagementPage() {
           <table className="w-full min-w-[1000px] text-left">
             <thead className="whitespace-nowrap bg-navy text-white">
               <tr>
-                <th className="px-4 py-3 font-semibold">Mã đơn</th>
+                <th className="px-4 py-3 font-semibold">Mã đặt vé</th>
                 <th className="px-4 py-3 font-semibold">Khách hàng</th>
                 <th className="px-4 py-3 font-semibold">Phim / Ghế</th>
                 <th className="px-4 py-3 font-semibold">Suất chiếu</th>
@@ -217,7 +217,7 @@ function BookingManagementPage() {
             <tbody>
               {rows.map((booking) => (
                 <tr key={booking.id} className="border-t border-gray-200 hover:bg-cream">
-                  <td className="px-4 py-3 font-semibold">#{booking.id}</td>
+                  <td className="px-4 py-3 font-mono font-semibold">{booking.bookingCode}</td>
                   <td className="px-4 py-3">{booking.user.email}</td>
                   <td className="min-w-40 px-4 py-3">
                     <p>{booking.showtime.movie.title}</p>

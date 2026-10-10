@@ -2,33 +2,15 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { getActiveCinemas } from '../api/cinemaApi'
 import { getMovies } from '../api/movieApi'
+import WhyChooseUs from '../components/common/WhyChooseUs'
 import { FilmIcon } from '../components/icons/Icons'
 import { useFetch } from '../hooks/useFetch'
 
 // Link ảnh cho trang. Để trống ('') thì phần đó tự ẩn ảnh, trang vẫn hiển thị bình thường
 const ABOUT_IMAGES = {
-  banner: '/images/about/story.png', // ảnh nền khối tiêu đề trên cùng (ảnh ngang, rộng)
-  story: '/images/about/banner.png', // ảnh bên cạnh đoạn giới thiệu
+  banner: '', // ảnh nền khối tiêu đề trên cùng (ảnh ngang, rộng)
+  story: '/images/about/banner.jpg', // ảnh bên cạnh đoạn giới thiệu
 }
-
-const highlights = [
-  {
-    title: 'Đặt vé trực tuyến 24/7',
-    text: 'Xem lịch chiếu và đặt vé mọi lúc, mọi nơi, không cần xếp hàng tại quầy.',
-  },
-  {
-    title: 'Chọn ghế trực quan',
-    text: 'Sơ đồ phòng chiếu hiển thị rõ ghế trống, ghế đã đặt và từng loại ghế kèm giá.',
-  },
-  {
-    title: 'Giữ ghế 5 phút',
-    text: 'Ghế bạn chọn được giữ riêng trong 5 phút để hoàn tất đặt vé, không lo bị người khác đặt mất.',
-  },
-  {
-    title: 'Vé điện tử',
-    text: 'Đặt xong là có vé ngay trong mục "Vé của tôi", xem lại lịch sử đặt vé bất cứ lúc nào.',
-  },
-]
 
 const bookingSteps = [
   { title: 'Chọn phim', text: 'Xem phim đang chiếu, phim sắp chiếu và thông tin chi tiết từng phim.' },
@@ -71,7 +53,7 @@ function AboutPage() {
             <div className="absolute inset-0 bg-navy/70" />
           </>
         )}
-        <div className="relative mx-auto max-w-7xl px-4 py-16 text-center text-white md:py-24">
+        <div className="relative mx-auto max-w-7xl px-4 py-14 text-center text-white md:py-20">
           <p className="text-lg font-semibold uppercase tracking-[0.3em] text-sky">Cinema Booking</p>
           <h1 className="mt-3 text-4xl font-bold md:text-5xl">Giới thiệu</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-white/80">
@@ -120,18 +102,8 @@ function AboutPage() {
           ))}
         </section>
 
-        {/* Điểm nổi bật */}
-        <section className="py-12">
-          <SectionTitle>Vì sao chọn chúng tôi</SectionTitle>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {highlights.map((item) => (
-              <div key={item.title} className="rounded-lg border-t-4 border-sky bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-bold text-title">{item.title}</h3>
-                <p className="mt-3 text-navy/70">{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* Vì sao chọn chúng tôi: dùng chung component, icon và nội dung nằm trong WhyChooseUs */}
+        <WhyChooseUs />
 
         {/* Các bước đặt vé */}
         <section className="pb-12">
