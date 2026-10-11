@@ -85,7 +85,7 @@ function HeroCarousel({ movies }: HeroCarouselProps) {
               )}
               <div className="absolute inset-0 bg-linear-to-r from-navy via-navy/90 to-navy/50" />
 
-              <div className="relative mx-auto flex max-w-7xl flex-col-reverse items-center gap-8 px-4 pt-10 pb-24 md:flex-row md:gap-12 md:px-20 md:pt-16 md:pb-28">
+              <div className="relative mx-auto flex max-w-7xl flex-col-reverse items-center gap-8 px-4 pt-10 pb-16 md:flex-row md:gap-12 md:px-20 md:pt-16 md:pb-20">
                 {/* Thông tin phim */}
                 <div className="min-w-0 flex-1 text-center md:text-left">
                   <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
