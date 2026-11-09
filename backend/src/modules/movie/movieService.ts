@@ -17,6 +17,8 @@ export interface MovieFilter {
   status?: MovieStatus;
   search?: string;
   genreId?: number;
+  // true: lấy cả phim đã chiếu (trang quản trị). Mặc định chỉ lấy đang chiếu và sắp chiếu
+  includeEnded?: boolean;
 }
 
 // Loại bỏ genreId trùng, tránh lỗi trùng khóa chính (movieId, genreId) ở bảng MovieGenre
@@ -24,34 +26,49 @@ function toMovieGenreRows(genreIds: number[]) {
   return [...new Set(genreIds)].map((genreId) => ({ genreId }));
 }
 
-// Ngày hôm nay theo giờ Việt Nam (UTC+7), đưa về 00:00 UTC
-// để so sánh đúng với cột releaseDate kiểu DATE (không có giờ).
-// Nếu dùng thẳng new Date() thì từ 0h đến 7h sáng giờ Việt Nam
-// server vẫn tính là ngày hôm trước (vì giờ UTC chậm hơn 7 tiếng).
-
-// Đã tới ngày khởi chiếu thì là đang chiếu, chưa tới thì là sắp chiếu
-function getStatusByReleaseDate(releaseDate: Date): MovieStatus {
-  return releaseDate <= getTodayDate() ? 'now_showing' : 'coming_soon';
+// Trạng thái tính theo ngày khởi chiếu và ngày kết thúc:
+// - qua ngày kết thúc (endDate < hôm nay): đã chiếu (ngày kết thúc vẫn còn chiếu)
+// - đã tới ngày khởi chiếu: đang chiếu
+// - chưa tới ngày khởi chiếu: sắp chiếu
+function getMovieStatus(releaseDate: Date, endDate: Date | null): MovieStatus {
+  const today = getTodayDate();
+  if (endDate && endDate < today) return 'ended';
+  return releaseDate <= today ? 'now_showing' : 'coming_soon';
 }
 
-// Chuyển các phim sắp chiếu đã tới ngày khởi chiếu sang đang chiếu.
+// Cập nhật trạng thái phim theo ngày hiện tại.
 // Chạy mỗi khi đọc danh sách/chi tiết phim thay vì dùng cron,
 // cùng cách làm với việc tự nhả ghế hết hạn giữ (UC20).
 async function syncMovieStatus() {
-  await prisma.movie.updateMany({
-    where: {
-      status: 'coming_soon',
-      releaseDate: { lte: getTodayDate() },
-    },
-    data: { status: 'now_showing' },
-  });
+  const today = getTodayDate();
+  await prisma.$transaction([
+    // 1. Qua ngày kết thúc thì chuyển sang đã chiếu
+    prisma.movie.updateMany({
+      where: { status: { not: 'ended' }, endDate: { lt: today } },
+      data: { status: 'ended' },
+    }),
+    // 2. Sắp chiếu đã tới ngày khởi chiếu thì chuyển sang đang chiếu
+    prisma.movie.updateMany({
+      where: {
+        status: 'coming_soon',
+        releaseDate: { lte: today },
+        OR: [{ endDate: null }, { endDate: { gte: today } }],
+      },
+      data: { status: 'now_showing' },
+    }),
+  ]);
 }
 
 export async function getMovies(filter: MovieFilter) {
   await syncMovieStatus();
 
   const where: Prisma.MovieWhereInput = {};
-  if (filter.status !== undefined) where.status = filter.status;
+  if (filter.status !== undefined) {
+    where.status = filter.status;
+  } else if (!filter.includeEnded) {
+    // Phía khách hàng: ẩn phim đã chiếu
+    where.status = { not: 'ended' };
+  }
   // MySQL collation utf8mb4_0900_ai_ci nên contains đã không phân biệt hoa thường
   if (filter.search !== undefined) where.title = { contains: filter.search };
   if (filter.genreId !== undefined) where.genres = { some: { genreId: filter.genreId } };
@@ -88,8 +105,8 @@ export async function createMovie(input: CreateMovieInput) {
     posterUrl: input.posterUrl,
     trailerUrl: input.trailerUrl,
     releaseDate: input.releaseDate,
-    // Trạng thái tự tính theo ngày khởi chiếu, admin không cần gửi
-    status: getStatusByReleaseDate(input.releaseDate),
+    // Trạng thái tự tính theo ngày khởi chiếu và ngày kết thúc, admin không cần gửi
+    status: getMovieStatus(input.releaseDate, input.endDate ?? null),
     // Tạo phim và các dòng MovieGenre trong cùng 1 lệnh (Prisma tự bọc transaction)
     genres: { create: toMovieGenreRows(input.genreIds) },
   };
@@ -108,6 +125,16 @@ export async function createMovie(input: CreateMovieInput) {
 }
 
 export async function updateMovie(id: number, input: UpdateMovieInput) {
+  // Lấy ngày khởi chiếu, ngày kết thúc hiện tại để tính lại trạng thái
+  // khi admin chỉ sửa một trong hai ngày
+  const current = await prisma.movie.findUnique({
+    where: { id },
+    select: { releaseDate: true, endDate: true },
+  });
+  if (!current) {
+    throw new AppError('Không tìm thấy phim', 404);
+  }
+
   // Chỉ cập nhật những trường thực sự được gửi lên
   // (bắt buộc vì tsconfig bật exactOptionalPropertyTypes)
   const data: Prisma.MovieUpdateInput = {};
@@ -121,11 +148,14 @@ export async function updateMovie(id: number, input: UpdateMovieInput) {
   if (input.posterUrl !== undefined) data.posterUrl = input.posterUrl;
   if (input.trailerUrl !== undefined) data.trailerUrl = input.trailerUrl;
   if (input.endDate !== undefined) data.endDate = input.endDate;
+  if (input.releaseDate !== undefined) data.releaseDate = input.releaseDate;
 
-  // Đổi ngày khởi chiếu thì tính lại trạng thái theo ngày mới
-  if (input.releaseDate !== undefined) {
-    data.releaseDate = input.releaseDate;
-    data.status = getStatusByReleaseDate(input.releaseDate);
+  // Đổi ngày khởi chiếu hoặc ngày kết thúc thì tính lại trạng thái
+  // (ví dụ gia hạn ngày kết thúc thì phim đã chiếu quay lại đang chiếu)
+  if (input.releaseDate !== undefined || input.endDate !== undefined) {
+    const releaseDate = input.releaseDate ?? current.releaseDate;
+    const endDate = input.endDate ?? current.endDate;
+    if (releaseDate) data.status = getMovieStatus(releaseDate, endDate);
   }
 
   // Có gửi genreIds thì thay toàn bộ danh sách thể loại cũ bằng danh sách mới,

@@ -20,6 +20,7 @@ enum EntityStatus {
 enum MovieStatus {
   coming_soon
   now_showing
+  ended 
 }
 
 enum ShowtimeStatus {

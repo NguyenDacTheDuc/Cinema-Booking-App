@@ -109,10 +109,13 @@ function MovieDetailPage() {
     return <p className="mx-auto max-w-7xl px-4 py-16 text-lg text-navy/60">Đang tải...</p>
   }
 
-  if (error || !movie) {
+  // Phim đã chiếu không hiển thị ở phía khách hàng
+  if (error || !movie || movie.status === 'ended') {
     return (
       <div className="mx-auto max-w-7xl px-4 py-16 text-center">
-        <p className="text-2xl font-bold">{error ?? 'Không tìm thấy phim'}</p>
+        <p className="text-2xl font-bold">
+          {error ?? (movie?.status === 'ended' ? 'Phim đã ngừng chiếu' : 'Không tìm thấy phim')}
+        </p>
         <Link to="/" className="mt-4 inline-block text-lg text-title hover:underline">
           Quay về trang chủ
         </Link>
@@ -162,9 +165,8 @@ function MovieDetailPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3">
                 <span
-                  className={`rounded-full px-3 py-1 text-sm font-semibold ${
-                    isNowShowing ? 'bg-green-500 text-white' : 'bg-amber-400 text-navy'
-                  }`}
+                  className={`rounded-full px-3 py-1 text-sm font-semibold ${isNowShowing ? 'bg-green-500 text-white' : 'bg-amber-400 text-navy'
+                    }`}
                 >
                   {isNowShowing ? 'Đang chiếu' : 'Sắp chiếu'}
                 </span>

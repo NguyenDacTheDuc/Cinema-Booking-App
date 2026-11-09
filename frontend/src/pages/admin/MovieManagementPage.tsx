@@ -8,7 +8,7 @@ import { createMovie, deleteMovie, getMovies, updateMovie } from '../../api/movi
 import Modal from '../../components/admin/Modal'
 import { useFetch } from '../../hooks/useFetch'
 import type { AdminGenre } from '../../types/genre'
-import type { Movie, MovieInput } from '../../types/movie'
+import type { Movie, MovieInput, MovieStatus } from '../../types/movie'
 import { formatDate } from '../../utils/format'
 
 // Phân loại độ tuổi phim chiếu rạp ở Việt Nam
@@ -423,12 +423,20 @@ function MovieFormModal({ movie, genres, onClose, onSaved }: MovieFormModalProps
   )
 }
 
+// Nhãn trạng thái phim: đang chiếu (xanh lá), sắp chiếu (xanh dương), đã chiếu (đỏ)
+const MOVIE_STATUS_BADGES: Record<MovieStatus, { label: string; className: string }> = {
+  now_showing: { label: 'Đang chiếu', className: 'bg-green-100 text-green-700' },
+  coming_soon: { label: 'Sắp chiếu', className: 'bg-sky/15 text-title' },
+  ended: { label: 'Đã chiếu', className: 'bg-red-100 text-red-700' },
+}
+
 // ======================= Trang quản lý phim =======================
 
 function MovieManagementPage() {
   // Tăng số này để tải lại danh sách sau khi thêm, sửa, xóa
   const [reloadKey, setReloadKey] = useState(0)
-  const { data: movies, loading, error } = useFetch(() => getMovies(), [reloadKey])
+  // Lấy cả phim đã chiếu (phía khách hàng thì ẩn)
+  const { data: movies, loading, error } = useFetch(() => getMovies({ includeEnded: true }), [reloadKey])
   // Danh sách thể loại cho form (lấy cả thể loại ngừng dùng để hiện đúng thể loại cũ của phim)
   const { data: genres } = useFetch(() => getAllGenres(), [])
 
@@ -473,7 +481,7 @@ function MovieManagementPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Quản lý phim</h1>
-          <p className="mt-2 text-lg text-navy/70">Trạng thái phim tự cập nhật theo ngày khởi chiếu.</p>
+          <p className="mt-2 text-lg text-navy/70">Trạng thái phim tự cập nhật theo ngày khởi chiếu và ngày kết thúc.</p>
         </div>
 
         {/* Ô tìm kiếm và nút thêm phim nằm cùng hàng bên phải */}
@@ -523,7 +531,7 @@ function MovieManagementPage() {
             </thead>
             <tbody>
               {rows.map((movie, index) => {
-                const isShowing = movie.status === 'now_showing'
+                const statusBadge = MOVIE_STATUS_BADGES[movie.status]
                 return (
                   <tr key={movie.id} className="border-t border-gray-200 hover:bg-cream">
                     <td className="px-4 py-3">{index + 1}</td>
@@ -550,11 +558,9 @@ function MovieManagementPage() {
                     <td className="whitespace-nowrap px-4 py-3">{movie.endDate ? formatDate(movie.endDate) : '—'}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${
-                          isShowing ? 'bg-green-100 text-green-700' : 'bg-sky/15 text-title'
-                        }`}
+                        className={`whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${statusBadge.className}`}
                       >
-                        {isShowing ? 'Đang chiếu' : 'Sắp chiếu'}
+                        {statusBadge.label}
                       </span>
                     </td>
                     <td className="px-4 py-3">

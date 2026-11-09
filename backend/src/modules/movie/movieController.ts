@@ -4,18 +4,23 @@ import { sendSuccess } from '../../utils/apiResponse';
 import { parseId } from '../../utils/parseId';
 import { AppError } from '../../utils/appError';
 
-// GET /movies?status=&search=&genreId=
+// GET /movies?status=&search=&genreId=&includeEnded=
 // Query không đi qua middleware validate (req.query trong Express 5 là chỉ đọc),
 // nên đọc và kiểm tra đơn giản ngay tại đây
 export async function getMovies(req: Request, res: Response) {
-  const { status, search, genreId } = req.query;
+  const { status, search, genreId, includeEnded } = req.query;
   const filter: movieService.MovieFilter = {};
 
   if (status !== undefined) {
-    if (status !== 'coming_soon' && status !== 'now_showing') {
+    if (status !== 'coming_soon' && status !== 'now_showing' && status !== 'ended') {
       throw new AppError('Trạng thái phim không hợp lệ', 400);
     }
     filter.status = status;
+  }
+
+  // Mặc định ẩn phim đã chiếu; trang quản trị gửi includeEnded=true để lấy đủ
+  if (includeEnded === 'true') {
+    filter.includeEnded = true;
   }
 
   if (typeof search === 'string' && search.trim() !== '') {

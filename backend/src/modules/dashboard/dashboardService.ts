@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../config/prisma';
 import { formatDate, formatTime, getShowtimeStartAt, timeDateToMinutes } from '../../utils/dateTime';
 import { getTodayDate } from '../../utils/getTodayDate';
@@ -106,15 +107,23 @@ async function getRevenueThisMonth(today: Date) {
 
 // ======================= Phim =======================
 
-// Đếm theo ngày khởi chiếu, cùng quy tắc tự cập nhật trạng thái ở module movie
-// (phim coming_soon tới ngày khởi chiếu thì tính là đang chiếu)
+// Đếm theo ngày khởi chiếu và ngày kết thúc, cùng quy tắc tự cập nhật trạng thái ở module movie
+// (tới ngày khởi chiếu thì tính là đang chiếu, qua ngày kết thúc thì không tính nữa)
 async function countMovies(today: Date) {
+  const notEnded: Prisma.MovieWhereInput = {
+    status: { not: 'ended' },
+    OR: [{ endDate: null }, { endDate: { gte: today } }],
+  };
   const [nowShowing, comingSoon] = await Promise.all([
     prisma.movie.count({
-      where: { OR: [{ status: 'now_showing' }, { releaseDate: { lte: today } }] },
+      where: {
+        AND: [notEnded, { OR: [{ status: 'now_showing' }, { releaseDate: { lte: today } }] }],
+      },
     }),
     prisma.movie.count({
-      where: { status: 'coming_soon', OR: [{ releaseDate: null }, { releaseDate: { gt: today } }] },
+      where: {
+        AND: [notEnded, { status: 'coming_soon' }, { OR: [{ releaseDate: null }, { releaseDate: { gt: today } }] }],
+      },
     }),
   ]);
   return { nowShowing, comingSoon };

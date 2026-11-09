@@ -1,4 +1,5 @@
-export type MovieStatus = 'coming_soon' | 'now_showing';
+// ended: đã chiếu (qua ngày kết thúc), chỉ trang quản trị mới thấy
+export type MovieStatus = 'coming_soon' | 'now_showing' | 'ended';
 
 export interface Genre {
   id: number;
@@ -26,9 +27,10 @@ export interface MovieFilter {
   status?: MovieStatus;
   search?: string;
   genreId?: number;
+  includeEnded?: boolean; // true: lấy cả phim đã chiếu (trang quản trị)
 }
 
-// Dữ liệu admin gửi lên khi thêm/sửa phim (trạng thái backend tự tính theo ngày khởi chiếu)
+// Dữ liệu admin gửi lên khi thêm/sửa phim (trạng thái backend tự tính theo ngày khởi chiếu và ngày kết thúc)
 export interface MovieInput {
   title: string;
   description: string;

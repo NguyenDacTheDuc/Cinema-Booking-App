@@ -332,7 +332,8 @@ function ShowtimeManagementPage() {
     [date, cinemaId, movieId, reloadKey],
   )
 
-  const { data: movies } = useFetch(() => getMovies(), [])
+  // Lấy cả phim đã chiếu để bộ lọc vẫn xem được suất chiếu cũ của phim đó
+  const { data: movies } = useFetch(() => getMovies({ includeEnded: true }), [])
   const { data: cinemas } = useFetch(() => getAllCinemas(), [])
   // Form thêm chỉ cho chọn phim chưa hết thời gian chiếu và rạp đang hoạt động
   const today = getTodayString()
