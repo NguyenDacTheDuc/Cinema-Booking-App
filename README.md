@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/34928321/README.md)
 # 🎬 Cinema Booking App
 
 A full-stack movie ticket booking website. Customers browse movies, pick a showtime, choose seats on a live seat map and receive an e-ticket with a QR code. Admins run the cinema from a dashboard: movies, genres, cinemas, rooms, seat types, showtimes, bookings and user accounts.
